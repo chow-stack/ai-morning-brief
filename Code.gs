@@ -356,15 +356,17 @@ function profilePrompt_(c) { return ['Reader profile:', `Name: ${c.name || 'not 
 function shouldRunToday_(schedule, date, timezone) { const day = Number(Utilities.formatDate(date, timezone, 'u')); if (schedule === 'Every day') return true; if (schedule === 'Weekdays') return day <= 5; if (schedule === 'Mon/Wed/Fri') return [1, 3, 5].includes(day); if (schedule === 'Weekly Monday') return day === 1; return false; }
 
 function parseTime_(value) {
-  const text = String(value || '').trim(); let match = text.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return { hour: value.getHours(), minute: value.getMinutes() };
+  if (typeof value === 'number' && Number.isFinite(value)) { const total = Math.round((((value % 1) + 1) % 1) * 1440) % 1440; return { hour: Math.floor(total / 60), minute: total % 60 }; }
+  const text = String(value || '').trim(); let match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)$/i);
   if (match) { let hour = Number(match[1]); const minute = Number(match[2]); if (hour < 1 || hour > 12 || minute > 59) throw new Error('Delivery time must look like 7:30 AM.'); if (match[3].toUpperCase() === 'PM' && hour !== 12) hour += 12; if (match[3].toUpperCase() === 'AM' && hour === 12) hour = 0; return { hour, minute }; }
-  match = text.match(/^(\d{1,2}):(\d{2})$/); if (match) { const hour = Number(match[1]); const minute = Number(match[2]); if (hour <= 23 && minute <= 59) return { hour, minute }; } throw new Error('Delivery time must look like 7:30 AM.');
+  match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/); if (match) { const hour = Number(match[1]); const minute = Number(match[2]); if (hour <= 23 && minute <= 59) return { hour, minute }; } throw new Error('Delivery time must look like 7:30 AM.');
 }
 function formatTime_(hour, minute) { const suffix = hour >= 12 ? 'PM' : 'AM'; return `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${suffix}`; }
 function makeTimes_() { const values = []; for (let h = 0; h < 24; h += 1) for (let m = 0; m < 60; m += 30) values.push(formatTime_(h, m)); return values; }
 
 function captureSettings_() {
-  const s = SpreadsheetApp.getActive().getSheetByName(APP.settingsSheet); if (!s || s.getLastRow() < 2) return {}; const rows = s.getRange(2, 1, s.getLastRow() - 1, Math.min(s.getLastColumn(), 2)).getValues(); const map = {}; rows.forEach((r) => { const key = textValue_(r[0]); if (key && key !== 'SECTION') map[key] = r[1]; }); return map;
+  const s = SpreadsheetApp.getActive().getSheetByName(APP.settingsSheet); if (!s || s.getLastRow() < 2) return {}; const range = s.getRange(2, 1, s.getLastRow() - 1, Math.min(s.getLastColumn(), 2)); const rows = range.getValues(); const displayed = range.getDisplayValues(); const map = {}; rows.forEach((r, i) => { const key = textValue_(r[0]); if (key && key !== 'SECTION') map[key] = key === 'Delivery time' ? displayed[i][1] : r[1]; }); return map;
 }
 
 function captureSources_() {

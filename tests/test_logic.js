@@ -35,6 +35,9 @@ assert.strictEqual(run("new Set(SETTINGS.filter(row => row[0] !== 'SECTION').map
 assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_('7:30 AM')"))), { hour: 7, minute: 30 });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_('12:00 AM')"))), { hour: 0, minute: 0 });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_('12:30 PM')"))), { hour: 12, minute: 30 });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_('7:30:00 AM')"))), { hour: 7, minute: 30 });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(run('parseTime_(7.5 / 24)'))), { hour: 7, minute: 30 });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_(new Date(2000, 0, 1, 7, 30))"))), { hour: 7, minute: 30 });
 assert.strictEqual(run("formatTime_(19, 30)"), '7:30 PM');
 assert.strictEqual(run('makeTimes_().length'), 48);
 assert.throws(() => run("parseTime_('25:00')"), /Delivery time/);
