@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_blank">
+    <style>
+      body { font: 14px Arial, sans-serif; color: #182230; padding: 18px; }
+      h2 { margin: 0 0 10px; }
+      p { line-height: 1.45; color: #475467; }
+      label { display: block; margin: 18px 0 6px; font-weight: 700; }
+      input { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid #d0d5dd; border-radius: 7px; }
+      button { margin-top: 14px; border: 0; border-radius: 7px; padding: 10px 14px; background: #3157d5; color: white; font-weight: 700; cursor: pointer; }
+      button:disabled { opacity: .55; cursor: default; }
+      .status { margin-top: 14px; padding: 10px; border-radius: 7px; background: #f2f4f7; white-space: pre-line; }
+      .error { background: #fef3f2; color: #b42318; }
+      .success { background: #ecfdf3; color: #027a48; }
+      .small { font-size: 12px; color: #667085; }
+    </style>
+  </head>
+  <body>
+    <h2>Connect your free Gemini key</h2>
+    <p>
+      Create a key in <a href="https://aistudio.google.com/app/apikey">Google AI Studio</a>.
+      Keep the project on the free tier and do not share the key.
+    </p>
+    <label for="key">Gemini API key</label>
+    <input id="key" type="password" autocomplete="off" placeholder="Paste key here">
+    <div class="small">The key is stored in your private Apps Script user properties, not in spreadsheet cells.</div>
+    <button id="save" onclick="save()">Save key</button>
+    <div id="status" class="status">Checking setup…</div>
+
+    <script>
+      function render(state) {
+        const lines = [
+          `Gemini key: ${state.hasKey ? 'connected' : 'missing'}`,
+          `Delivery email: ${state.email || 'missing on Settings sheet'}`,
+          `Model: ${state.model}`,
+          `Daily delivery: ${state.hasTrigger ? 'installed' : 'not installed'}`,
+        ];
+        document.getElementById('status').className = `status ${state.hasKey ? 'success' : ''}`;
+        document.getElementById('status').textContent = lines.join('\n');
+      }
+
+      function fail(error) {
+        const status = document.getElementById('status');
+        status.className = 'status error';
+        status.textContent = error.message || String(error);
+        document.getElementById('save').disabled = false;
+      }
+
+      function save() {
+        const key = document.getElementById('key').value.trim();
+        document.getElementById('save').disabled = true;
+        google.script.run
+          .withSuccessHandler((state) => {
+            document.getElementById('key').value = '';
+            document.getElementById('save').disabled = false;
+            render(state);
+          })
+          .withFailureHandler(fail)
+          .saveApiKey(key);
+      }
+
+      google.script.run.withSuccessHandler(render).withFailureHandler(fail).getSetupState();
+    </script>
+  </body>
+</html>
