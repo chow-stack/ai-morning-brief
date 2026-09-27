@@ -9,15 +9,14 @@ summarize up to 20 public article URLs, and sends the result with Gmail.
 1. Create a blank Google Sheet named **AI Morning Brief Template**.
 2. Open **Extensions → Apps Script**.
 3. Replace `Code.gs` with the contents of [`Code.gs`](Code.gs).
-4. Add an HTML file named `Setup` and paste [`Setup.html`](Setup.html).
-5. Open **Project Settings**, enable **Show "appsscript.json" manifest file in editor**,
+4. Open **Project Settings**, enable **Show "appsscript.json" manifest file in editor**,
    and replace the manifest with [`appsscript.json`](appsscript.json).
-6. Save. Return to the Sheet and reload it.
-7. Choose **AI Morning Brief → 1. Build or repair template**.
-8. Fill in your email on the Settings sheet.
-9. Choose **AI Morning Brief → 2. Add or update Gemini key**.
-10. Choose **Send test brief now** and complete the Google authorization flow.
-11. After the test arrives, choose **Install daily delivery**.
+5. Save. Return to the Sheet and reload it.
+6. Choose **AI Morning Brief → 1. Build or repair template**.
+7. Fill in your email on the Settings sheet.
+8. Choose **AI Morning Brief → 2. Add or update Gemini key**.
+9. Choose **Send test brief now** and complete the Google authorization flow.
+10. After the test arrives, choose **Install daily delivery**.
 
 Do not put your own API key into a Sheet shared as the club template. API keys
 are stored in Apps Script user properties and are not copied with the cells, but
@@ -45,6 +44,11 @@ the Sheet URL instead of `/edit...` to open the copy prompt directly.
 Before the club meeting, test the copy link with a second Google account. Some
 school-managed Workspace accounts can disable Google AI Studio or Apps Script;
 members can use a personal Google account if club policy permits it.
+
+If Apps Script reports `PERMISSION_DENIED` while multiple Google accounts are
+signed into the same browser, retry in an Incognito window with only the account
+that owns the Sheet signed in. This is a known account-selection failure in
+Google's Apps Script surfaces, not a Gemini API-key error.
 
 ## Design limits
 

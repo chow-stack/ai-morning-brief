@@ -56,7 +56,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu(APP.menu)
     .addItem('1. Build or repair template', 'initializeTemplate')
-    .addItem('2. Add or update Gemini key', 'showSetupDialog')
+    .addItem('2. Add or update Gemini key', 'promptForApiKey')
     .addSeparator()
     .addItem('Send test brief now', 'sendTestBrief')
     .addItem('Install daily delivery', 'installDailyDelivery')
@@ -163,10 +163,17 @@ function buildStateSheet_() {
   sheet.hideSheet();
 }
 
-function showSetupDialog() {
+function promptForApiKey() {
   ensureTemplate_();
-  const html = HtmlService.createHtmlOutputFromFile('Setup').setWidth(520).setHeight(420);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Connect Gemini');
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.prompt(
+    'Connect Gemini',
+    'Paste your Gemini API key. It will be stored in private Apps Script user properties, not in spreadsheet cells.',
+    ui.ButtonSet.OK_CANCEL,
+  );
+  if (response.getSelectedButton() !== ui.Button.OK) return;
+  saveApiKey(response.getResponseText());
+  ui.alert('Gemini connected', 'Your API key was saved. Next, choose Send test brief now.', ui.ButtonSet.OK);
 }
 
 function getSetupState() {
@@ -183,7 +190,6 @@ function saveApiKey(apiKey) {
   const cleaned = String(apiKey || '').trim();
   if (!cleaned || cleaned.length < 20) throw new Error('Paste a valid Gemini API key.');
   PropertiesService.getUserProperties().setProperty('GEMINI_API_KEY', cleaned);
-  return getSetupState();
 }
 
 function sendTestBrief() {
