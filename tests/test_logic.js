@@ -31,6 +31,8 @@ assert.ok(run('SOURCE_CATALOG.length') >= 30);
 assert.strictEqual(run('new Set(SOURCE_CATALOG.map(row => row[4])).size'), run('SOURCE_CATALOG.length'));
 assert.strictEqual(run("SOURCE_CATALOG.every(row => /^https:\\/\\//.test(row[4]))"), true);
 assert.strictEqual(run("new Set(SETTINGS.filter(row => row[0] !== 'SECTION').map(row => row[0])).size"), run("SETTINGS.filter(row => row[0] !== 'SECTION').length"));
+assert.strictEqual(run("SETTINGS.some(row => row[0] === 'Knowledge level')"), false);
+assert.strictEqual(run("SETTINGS.some(row => row[0] === 'Explain jargon')"), false);
 
 assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_('7:30 AM')"))), { hour: 7, minute: 30 });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(run("parseTime_('12:00 AM')"))), { hour: 0, minute: 0 });
@@ -54,22 +56,32 @@ run(`testItems = [
 assert.deepStrictEqual(JSON.parse(JSON.stringify(run('chooseCandidates_(testItems, 4, 2).map(x => x.url)'))), ['https://a/1', 'https://a/2', 'https://b/1', 'https://b/2']);
 
 run(`retrievalFixture = {steps:[
-  {type:'url_context_result',result:[{url:'https://a/1',status:'success'},{url:'https://b/1',status:'paywall'}]},
+  {type:'url_context_call',id:'call-1',arguments:{urls:['https://a/old?utm_source=rss','https://b/1','https://d/original']}},
+  {type:'url_context_result',call_id:'call-1',result:[{url:'https://www.a/1',status:'success'},{url:'https://b/1',status:'paywall'},{url:'https://d/final',title:'Fetched title',snippet:'Fetched text'}]},
   {type:'model_output',content:[{type:'text',text:'{}',annotations:[{url:'https://c/1'}]}]}
 ]}`);
-assert.deepStrictEqual(JSON.parse(JSON.stringify(run('extractRetrieval_(retrievalFixture)'))), {
-  'https://a/1': 'success', 'https://b/1': 'paywall', 'https://c/1': 'success',
-});
+assert.strictEqual(run("retrievalStatusForUrl_(extractRetrieval_(retrievalFixture),'https://a/old?utm_source=rss')"), 'success');
+assert.strictEqual(run("retrievalStatusForUrl_(extractRetrieval_(retrievalFixture),'https://b/1')"), 'paywall');
+assert.strictEqual(run("retrievalStatusForUrl_(extractRetrieval_(retrievalFixture),'https://d/original')"), 'success');
+assert.strictEqual(run("retrievalStatusForUrl_(extractRetrieval_(retrievalFixture),'https://c/1')"), 'success');
+assert.strictEqual(run('extractRetrievalDetails_(retrievalFixture).toolCalled'), true);
+assert.strictEqual(run("canonicalUrlKey_('https://www.example.com/story/?utm_source=rss')"), 'example.com/story');
 
 run(`candidateFixture = [{title:'Feed title',url:'https://a/1',source:'Source A',category:'Tech',excerpt:'Safe feed excerpt',publishedAt:new Date('2026-09-27T00:00:00Z')}];
-digestFixture = {subject:'Subject',intro:'Intro',tldr:['One'],stories:[{title:'AI title',url:'https://a/1',source:'Wrong',category:'Tech',summary:'AI detail',bullets:['Detail'],why_it_matters:'Claim',jargon_explained:'Term',action_takeaway:'Act',what_to_watch:'Watch'}]};`);
-assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,8,{'https://a/1':'success'}).stories[0].summary"), 'AI detail');
-assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,8,{'https://a/1':'paywall'}).stories[0].summary"), 'Safe feed excerpt');
-assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,8,{'https://a/1':'paywall'}).stories[0].bullets.length"), 0);
-assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,8,{}).stories[0].retrievalStatus"), 'RSS excerpt only');
+digestFixture = {subject:'Subject',intro:'Intro',tldr:['One'],stories:[{title:'AI title',url:'https://a/1',source:'Wrong',category:'Tech',summary:'AI detail',bullets:['Detail'],why_it_matters:'Claim',action_takeaway:'Act',what_to_watch:'Watch'}]};
+validationConfig = {preset:'Standard',maxStories:8,bullets:1};`);
+assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,validationConfig,{'https://a/1':'success'}).stories[0].summary"), 'AI detail');
+assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,validationConfig,{'https://a/1':'paywall'}).stories[0].summary"), 'Safe feed excerpt');
+assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,validationConfig,{'https://a/1':'paywall'}).stories[0].bullets.length"), 0);
+assert.strictEqual(run("validateDigest_(digestFixture,candidateFixture,validationConfig,{}).stories[0].retrievalStatus"), 'RSS excerpt only');
+assert.ok(run("truncateWords_('one two three four five',3).split(/\\s+/).length") <= 3);
+run(`longDigest = JSON.parse(JSON.stringify(digestFixture)); longDigest.intro = Array(50).fill('intro').join(' '); longDigest.stories[0].summary = Array(80).fill('summary').join(' '); longDigest.stories[0].bullets = [Array(50).fill('bullet').join(' ')]; longValidated = validateDigest_(longDigest,candidateFixture,validationConfig,{'https://a/1':'success'});`);
+assert.ok(run("longValidated.intro.split(/\\s+/).length") <= 21);
+assert.ok(run("longValidated.stories[0].summary.split(/\\s+/).length") <= 36);
+assert.ok(run("longValidated.stories[0].bullets[0].split(/\\s+/).length") <= 16);
 
-run(`renderConfig = {density:'Compact',showTldr:true,accent:'#3157D5',groupByCategory:true,bullets:1,showDate:true,timezone:'UTC',showWhy:true,explainJargon:true,showAction:true,showWatch:true,briefName:'Test Brief'};
-renderDigest = validateDigest_(digestFixture,candidateFixture,8,{'https://a/1':'success'});`);
+run(`renderConfig = {density:'Compact',showTldr:true,accent:'#3157D5',groupByCategory:true,bullets:1,showDate:true,timezone:'UTC',showWhy:true,showAction:true,showWatch:true,briefName:'Test Brief'};
+renderDigest = validateDigest_(digestFixture,candidateFixture,validationConfig,{'https://a/1':'success'});`);
 assert.match(run('renderEmail_(renderDigest,renderConfig,true)'), /Full page read/);
 assert.match(run('renderEmail_(renderDigest,renderConfig,true)'), /Why it matters/);
 

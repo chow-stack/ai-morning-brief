@@ -50,7 +50,7 @@ the key in a Sheet cell.
 
 On **Settings**, add only the profile details useful for news selection. Major,
 career interests, current classes/projects, priority topics, topics to avoid,
-knowledge level, and purpose are all optional but improve ranking.
+and purpose are all optional but improve ranking.
 
 The “Additional instructions” cell is for preferences such as “favor practical
 tools I can try this week” or “explain finance terms.” The script explicitly
@@ -73,7 +73,7 @@ Choose Compact, Standard, or Deep dive in “Email preset,” then run
 
 - maximum stories, language, grouping, and TL;DR;
 - zero to three bullets per story;
-- why it matters, jargon explanations, an action, and what to watch;
+- why it matters, an action, and what to watch;
 - publication date, subject style, accent color, and spacing density.
 
 ### 4. Delivery
@@ -95,6 +95,22 @@ tool result for `success`, `error`, `paywall`, or `unsafe` status.
 
 Every email labels the retrieval level, and **History** records how many pages
 were successfully read.
+
+Use **AI Morning Brief → Test one article URL** to diagnose a specific public
+page. It reports whether URL Context ran, which model handled the request, the
+status returned, and a redirect when Google retrieved a different canonical URL.
+The retrieval parser matches tool calls to results by call ID and position,
+recognizes canonical/redirected URLs, and handles responses that return retrieved
+page content without an explicit `status` field.
+
+## Conciseness guarantees
+
+The three presets now use 4, 6, and 8 stories. Gemini is prompted with strict
+word limits, and the script applies those limits again after generation, so a
+model cannot produce an unexpectedly long email. Even Deep dive caps summaries
+at 44 words, bullets at 18 words, detail fields at 22 words, and TL;DR at three
+short items. The email layout also uses tighter spacing, smaller metadata, and
+shorter section blocks.
 
 ## Gemini use and fallback behavior
 
