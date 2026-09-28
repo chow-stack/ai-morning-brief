@@ -263,6 +263,7 @@ function buildSourcesSheet_(oldSources) {
 
 // Catalog rows keep the member's checkbox; catalog rows the member removed stay removed; retired feeds are dropped; custom rows are kept.
 function mergeSources_(oldSources, offered) {
+  if (!oldSources.length) offered = new Set(); // An empty or missing Sources tab always gets the full catalog, even if a copied sheet brought a _Catalog tab along.
   const previous = new Map(oldSources.map((x) => [normalizeUrl_(x.url), x])); const catalogUrls = new Set(SOURCE_CATALOG.map((r) => normalizeUrl_(r[4]))); const retired = new Set(RETIRED_SOURCE_URLS.map(normalizeUrl_)); const rows = [];
   SOURCE_CATALOG.forEach((r) => { const key = normalizeUrl_(r[4]); const p = previous.get(key); if (p) rows.push([p.enabled, r[1], r[2], r[3], r[4], r[5], r[6], r[7]]); else if (!offered.has(key)) rows.push(r.slice()); });
   oldSources.filter((x) => !catalogUrls.has(normalizeUrl_(x.url)) && !retired.has(normalizeUrl_(x.url))).forEach((x) => rows.push([x.enabled, x.pack || 'Custom', x.name || x.url, x.category || 'Custom', x.url, x.priority || 5, x.access || 'Unknown', x.notes || 'Custom source']));

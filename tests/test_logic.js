@@ -121,7 +121,8 @@ assert.strictEqual(run("upgraded.some((r) => r[4] === SOURCE_CATALOG[0][4])"), f
 assert.strictEqual(run("upgraded.some((r) => r[4] === 'https://thegradient.pub/rss/')"), false);
 assert.strictEqual(run("upgraded.find((r) => r[4] === 'https://custom.test/feed')[1]"), 'Custom');
 assert.strictEqual(run("upgraded.find((r) => r[4] === SOURCE_CATALOG[1][4])[0]"), run('!SOURCE_CATALOG[1][0]'));
-assert.strictEqual(run("mergeSources_([], new Set([normalizeUrl_(SOURCE_CATALOG[0][4])])).length"), run('SOURCE_CATALOG.length - 1'));
+assert.strictEqual(run("mergeSources_([], offeredAll).length"), run('SOURCE_CATALOG.length'));
+assert.strictEqual(run("mergeSources_([{ enabled: true, url: SOURCE_CATALOG[1][4], name: 'x' }], new Set([normalizeUrl_(SOURCE_CATALOG[0][4])])).some((r) => r[4] === SOURCE_CATALOG[0][4])"), false);
 assert.strictEqual(run("SOURCE_CATALOG.some((r) => RETIRED_SOURCE_URLS.includes(r[4]))"), false);
 
 // Feed discovery helpers.
